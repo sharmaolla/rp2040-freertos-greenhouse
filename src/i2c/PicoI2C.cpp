@@ -21,7 +21,7 @@ void PicoI2C::i2c1_irq(void) {
     if(i2c1_instance) i2c1_instance->isr();
 }
 
-PicoI2C::PicoI2C(int bus_nr) {
+PicoI2C::PicoI2C(uint bus_nr, uint speed) {
     int scl = I2C0_SCL_PIN;
     int sda = I2C0_SDA_PIN;
     switch(bus_nr) {
@@ -43,7 +43,7 @@ PicoI2C::PicoI2C(int bus_nr) {
     gpio_pull_up(scl);
     gpio_init(sda);
     gpio_pull_up(sda);
-    i2c_init(i2c, 400000);
+    i2c_init(i2c, speed);
     gpio_set_function(sda, GPIO_FUNC_I2C);
     gpio_set_function(scl, GPIO_FUNC_I2C);
     irq_set_enabled(irqn, false);

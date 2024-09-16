@@ -12,7 +12,7 @@
 
 class PicoI2C {
 public:
-    PicoI2C(int busnr);
+    PicoI2C(uint bus_nr, uint speed = 100000);
     uint write(uint8_t addr, const uint8_t *buffer, uint length);
     uint read(uint8_t addr, uint8_t *buffer, uint length);
     uint transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, uint8_t *rbuffer, uint rlength);

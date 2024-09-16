@@ -191,7 +191,7 @@ void modbus_task(void *param) {
 #include "ssd1306os.h"
 void display_task(void *param)
 {
-    auto i2cbus{std::make_shared<PicoI2C>(1)};
+    auto i2cbus{std::make_shared<PicoI2C>(1, 400000)};
     ssd1306os display(i2cbus);
     display.fill(0);
     display.text("Boot", 0, 0);
