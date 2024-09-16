@@ -43,7 +43,7 @@ PicoI2C::PicoI2C(int bus_nr) {
     gpio_pull_up(scl);
     gpio_init(sda);
     gpio_pull_up(sda);
-    i2c_init(i2c, 100000);
+    i2c_init(i2c, 400000);
     gpio_set_function(sda, GPIO_FUNC_I2C);
     gpio_set_function(scl, GPIO_FUNC_I2C);
     irq_set_enabled(irqn, false);
@@ -92,10 +92,14 @@ uint PicoI2C::write(uint8_t addr, const uint8_t *buffer, uint length) {
                 bool_to_bit(first && i2c->restart_on_next) << I2C_IC_DATA_CMD_RESTART_LSB |
                 bool_to_bit(last) << I2C_IC_DATA_CMD_STOP_LSB |
                 *buffer++;
-        while(i2c->hw->txflr == 16){
-            vTaskDelay(1);
+        while(!last && i2c_get_write_available(i2c)==0){
+            vTaskDelay(0);
         }
     }
+    while(!(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_STOP_DET_BITS)) {
+        vTaskDelay(1);
+    }
+    timeout = i2c->hw->clr_stop_det;
 #if 0
         // Wait until the transmission of the address/data from the internal
         // shift register has completed. For this to function correctly, the

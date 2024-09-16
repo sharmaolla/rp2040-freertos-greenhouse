@@ -5,6 +5,8 @@
 #include "semphr.h"
 #include "hardware/gpio.h"
 #include "PicoOsUart.h"
+#include "ssd1306.h"
+
 
 #include "hardware/timer.h"
 extern "C" {
@@ -97,6 +99,8 @@ void serial_task(void *param)
 }
 
 void modbus_task(void *param);
+void display_task(void *param);
+
 
 int main()
 {
@@ -112,6 +116,9 @@ int main()
     xTaskCreate(modbus_task, "Modbus", 512, (void *) nullptr,
                 tskIDLE_PRIORITY + 1, nullptr);
 
+
+    xTaskCreate(display_task, "SSD1306", 512, (void *) nullptr,
+                tskIDLE_PRIORITY + 1, nullptr);
 
     vTaskStartScheduler();
 
@@ -181,3 +188,16 @@ void modbus_task(void *param) {
 
 }
 
+#include "ssd1306os.h"
+void display_task(void *param)
+{
+    auto i2cbus{std::make_shared<PicoI2C>(1)};
+    ssd1306os display(i2cbus);
+    display.fill(0);
+    display.text("Boot", 0, 0);
+    display.show();
+    while(true) {
+        vTaskDelay(100);
+    }
+
+}
