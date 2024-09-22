@@ -14,17 +14,18 @@
 PicoI2C *PicoI2C::i2c0_instance{nullptr};
 PicoI2C *PicoI2C::i2c1_instance{nullptr};
 
-void PicoI2C::i2c0_irq(void) {
+void PicoI2C::i2c0_irq() {
     if (i2c0_instance) i2c0_instance->isr();
     else irq_set_enabled(I2C0_IRQ, false);
 }
 
-void PicoI2C::i2c1_irq(void) {
+void PicoI2C::i2c1_irq() {
     if (i2c1_instance) i2c1_instance->isr();
     else irq_set_enabled(I2C1_IRQ, false); // disable interrupt if we don't have instance
 }
 
-PicoI2C::PicoI2C(uint bus_nr, uint speed) {
+PicoI2C::PicoI2C(uint bus_nr, uint speed) :
+        task_to_notify(nullptr), wbuf{nullptr}, wctr{0}, rbuf{nullptr}, rctr{0}, rcnt{0} {
     int scl = I2C0_SCL_PIN;
     int sda = I2C0_SDA_PIN;
     switch (bus_nr) {
@@ -129,8 +130,7 @@ uint PicoI2C::transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, ui
     if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0) {
         // timed out
         count = 0;
-    }
-    else {
+    } else {
         count -= rctr + wctr;
     }
     irq_set_enabled(irqn, false);

@@ -12,7 +12,7 @@
 
 class PicoI2C {
 public:
-    PicoI2C(uint bus_nr, uint speed = 100000);
+    explicit PicoI2C(uint bus_nr, uint speed = 100000);
     uint write(uint8_t addr, const uint8_t *buffer, uint length);
     uint read(uint8_t addr, uint8_t *buffer, uint length);
     uint transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, uint8_t *rbuffer, uint rlength);
@@ -30,8 +30,8 @@ private:
     void rx_fill_fifo();
 
     void isr();
-    static void i2c0_irq(void);
-    static void i2c1_irq(void);
+    static void i2c0_irq();
+    static void i2c1_irq();
     static PicoI2C *i2c0_instance;
     static PicoI2C *i2c1_instance;
 };
