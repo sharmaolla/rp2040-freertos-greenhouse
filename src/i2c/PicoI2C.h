@@ -25,8 +25,9 @@ private:
     uint wctr;
     uint8_t *rbuf;
     uint rctr;
+    uint rcnt;
     void tx_fill_fifo();
-    void tx_write_first_byte();
+    void rx_fill_fifo();
 
     void isr();
     static void i2c0_irq(void);
