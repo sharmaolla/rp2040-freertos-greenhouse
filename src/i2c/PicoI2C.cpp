@@ -70,9 +70,7 @@ void PicoI2C::tx_fill_fifo() {
         if (i2c->restart_on_next) i2c->restart_on_next = false;
         --wctr;
 
-        if (last) {
-            if (!stop) i2c->restart_on_next = true;
-        }
+        if (last && !stop) i2c->restart_on_next = true;
     }
 }
 
@@ -90,16 +88,18 @@ void PicoI2C::rx_fill_fifo() {
         if (i2c->restart_on_next) i2c->restart_on_next = false;
         --rctr;
     }
-
 }
+
 
 uint PicoI2C::write(uint8_t addr, const uint8_t *buffer, uint length) {
     return transaction(addr, buffer, length, nullptr, 0);
 }
 
+
 uint PicoI2C::read(uint8_t addr, uint8_t *buffer, uint length) {
     return transaction(addr, nullptr, 0, buffer, length);
 }
+
 
 uint PicoI2C::transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, uint8_t *rbuffer, uint rlength) {
     assert((wbuffer && wlength > 0) || (rbuffer && rlength > 0));
@@ -118,6 +118,7 @@ uint PicoI2C::transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, ui
     rctr = rlength; // for writing read commands
     rcnt = rlength; // for counting received bytes
 
+    // write is done first if we have a combined transaction
     if (wctr > 0) tx_fill_fifo();
     else rx_fill_fifo();
 
@@ -151,17 +152,20 @@ void PicoI2C::isr() {
     }
 
     if (i2c->hw->intr_stat & I2C_IC_INTR_MASK_M_TX_EMPTY_BITS) {
+        // write commands go first
         if (wctr > 0) {
             tx_fill_fifo();
         } else if (rctr > 0) {
             rx_fill_fifo();
         }
         if (wctr == 0 && rctr == 0) {
+            // we are done with sending write/read commands
+            // mask all other interrupts except stop
             i2c->hw->intr_mask = I2C_IC_INTR_MASK_M_STOP_DET_BITS;
         }
     }
 
-    // notify if we are done
+    // notify if we are done - hw should also issue a stop if transaction is aborted
     if (i2c->hw->intr_stat & I2C_IC_INTR_MASK_M_STOP_DET_BITS) {
         i2c->hw->intr_mask = 0; // mask all interrupts
         (void) i2c->hw->clr_stop_det;
