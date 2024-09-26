@@ -84,11 +84,14 @@ int PicoOsUart::write(const uint8_t *buffer, int size, TickType_t timeout) {
     // if transmit interrupt is not enabled we need to enable it and give fifo an initial filling
     if(!(uart_get_hw(uart)->imsc & (1 << UART_UARTIMSC_TXIM_LSB))) {
         uint8_t ch;
-        // enable transmit interrupt
-        uart_set_irq_enables(uart, true, true);
         // fifo requires initial fill to get TX interrupts going
         while(uart_is_writable(uart) && xQueueReceive(tx, &ch, 0) == pdTRUE) {
             uart_get_hw(uart)->dr = ch;
+        }
+        // enable interrupt only if there is data left in the queue
+        if(uxQueueMessagesWaiting(tx)>0) {
+            // enable transmit interrupt
+            uart_set_irq_enables(uart, true, true);
         }
     }
     // enable interrupts on NVIC
