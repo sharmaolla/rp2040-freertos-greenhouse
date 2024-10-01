@@ -159,10 +159,12 @@ void PicoI2C::isr() {
         } else if (rctr > 0) {
             rx_fill_fifo();
         }
-        // we must keep TX_EMPTY interrupt enabled even if all write/read
-        // commands are written to FIFO. With 64 byte reads the last byte
-        // is lost if TX_EMPTY does not get to trigger before STOP_DET.
-        // The manual does not state a good reason for this behaviour.
+        if (wctr == 0 && rcnt == 0) { // note! using rcnt (=received byte counter) for disabling TX_EMPTY
+            // we must let TX_EMPTY to trigger once after last read command to get all bytes.
+            // we are done with sending write/read commands
+            // mask all other interrupts except stop
+            i2c->hw->intr_mask = I2C_IC_INTR_MASK_M_STOP_DET_BITS;
+        }
     }
 
     // notify if we are done - hw should also issue a stop if transaction is aborted
