@@ -130,13 +130,15 @@ int main()
 
     xTaskCreate(display_task, "SSD1306", 512, (void *) nullptr,
                 tskIDLE_PRIORITY + 1, nullptr);
-
+#endif
+#if 1
     xTaskCreate(i2c_task, "i2c test", 512, (void *) nullptr,
                 tskIDLE_PRIORITY + 1, nullptr);
 #endif
+#if 0
     xTaskCreate(tls_task, "tls test", 6000, (void *) nullptr,
                 tskIDLE_PRIORITY + 1, nullptr);
-
+#endif
     vTaskStartScheduler();
 
     while(true){};
