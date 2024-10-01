@@ -131,7 +131,7 @@ uint PicoI2C::transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, ui
         // timed out
         count = 0;
     } else {
-        count -= rctr + wctr;
+        count -= rcnt + wctr;
     }
     irq_set_enabled(irqn, false);
 
@@ -146,8 +146,9 @@ void PicoI2C::isr() {
     // Read is paced writes to command register in master mode
     // so we don't need RX_FULL interrupt.
     // We just empty the rxfifo before additional writes to cmd register
+    //  Testing (i2c->hw->status & I2C_IC_STATUS_RFNE_BITS) works also
     while (rcnt > 0 && i2c->hw->rxflr > 0) {
-        *rbuf++ = (uint8_t) i2c->hw->data_cmd;
+        *rbuf++ = static_cast<uint8_t>(i2c->hw->data_cmd);
         --rcnt;
     }
 
@@ -158,11 +159,10 @@ void PicoI2C::isr() {
         } else if (rctr > 0) {
             rx_fill_fifo();
         }
-        if (wctr == 0 && rctr == 0) {
-            // we are done with sending write/read commands
-            // mask all other interrupts except stop
-            i2c->hw->intr_mask = I2C_IC_INTR_MASK_M_STOP_DET_BITS;
-        }
+        // we must keep TX_EMPTY interrupt enabled even if all write/read
+        // commands are written to FIFO. With 64 byte reads the last byte
+        // is lost if TX_EMPTY does not get to trigger before STOP_DET.
+        // The manual does not state a good reason for this behaviour.
     }
 
     // notify if we are done - hw should also issue a stop if transaction is aborted
