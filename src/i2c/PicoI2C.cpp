@@ -5,10 +5,10 @@
 #include "pico/stdlib.h"
 #include "PicoI2C.h"
 
-//#define DEBUG_PRINT_TASK
+//#define DEBUG_PRINT
 
-#ifdef DEBUG_PRINT_TASK
-#include "DebugTask.h"
+#ifdef DEBUG_PRINT
+#include "Syslog.h"
 #endif
 
 #define I2C0_SDA_PIN 16
@@ -67,7 +67,7 @@ PicoI2C::PicoI2C(uint bus_nr, uint speed) :
 
 
 void PicoI2C::tx_fill_fifo() {
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
     int fill{0};
 #endif
     while (wctr > 0 && i2c_get_write_available(i2c) > 0) {
@@ -84,18 +84,18 @@ void PicoI2C::tx_fill_fifo() {
         --wctr;
 
         if (last && !stop) i2c->restart_on_next = true;
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
         ++fill;
 #endif
     }
-#ifdef DEBUG_PRINT_TASK
-    DebugTask::debug("tx_fill: %d", fill);
+#ifdef DEBUG_PRINT
+    Syslog::debug("tx_fill: %d", fill);
 #endif
 }
 
 
 void PicoI2C::rx_fill_fifo() {
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
     int fill{0};
 #endif
 
@@ -110,13 +110,13 @@ void PicoI2C::rx_fill_fifo() {
         // clear restart bit after first command
         if (i2c->restart_on_next) i2c->restart_on_next = false;
         --rctr;
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
         ++fill;
 #endif
     }
 
-#ifdef DEBUG_PRINT_TASK
-    DebugTask::debug("rx_fill: %d", fill);
+#ifdef DEBUG_PRINT
+    Syslog::debug("rx_fill: %d", fill);
 #endif
 }
 
@@ -171,8 +171,8 @@ uint PicoI2C::transaction(uint8_t addr, const uint8_t *wbuffer, uint wlength, ui
 
 void PicoI2C::isr() {
     BaseType_t hpw = pdFALSE;
-#ifdef DEBUG_PRINT_TASK
-    DebugTask::debug("%d %d %d %d",
+#ifdef DEBUG_PRINT
+    Syslog::debug("%d %d %d %d",
         !!(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_STOP_DET_BITS),
         !!(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_RX_FULL_BITS),
         !!(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_TX_EMPTY_BITS),
@@ -184,18 +184,18 @@ void PicoI2C::isr() {
     // so we don't need RX_FULL interrupt.
     // We just empty the rxfifo before additional writes to cmd register
     //  Testing (i2c->hw->status & I2C_IC_STATUS_RFNE_BITS) works also
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
     int fill{0};
 #endif
     while (rcnt > 0 && i2c->hw->rxflr > 0) {
         *rbuf++ = static_cast<uint8_t>(i2c->hw->data_cmd);
         --rcnt;
-#ifdef DEBUG_PRINT_TASK
+#ifdef DEBUG_PRINT
         ++fill;
 #endif
     }
-#ifdef DEBUG_PRINT_TASK
-    DebugTask::debug("read: %d, %d", fill, rcnt);
+#ifdef DEBUG_PRINT
+    Syslog::debug("read: %d, %d", fill, rcnt);
 #endif
 
     if (i2c->hw->intr_stat & I2C_IC_INTR_MASK_M_TX_EMPTY_BITS) {
