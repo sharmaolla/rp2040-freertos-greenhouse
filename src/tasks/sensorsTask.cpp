@@ -19,7 +19,7 @@ void SensorsTask( void *pvParameters){
 
     CO2Sensor co2sensor(*client);
     RHTSensor rht_sensor(*client);
-    Fan fan(*client);
+    //Fan fan(*client);
     SensorsData_t SensorsData;
 
     while(1){
@@ -28,14 +28,14 @@ void SensorsTask( void *pvParameters){
         auto temp_value = rht_sensor.read_t() / 10.0;
         //bool fanRun = fan.isRunning();
 
-        auto fan_speed =  fan.getSpeed() / 10.0;
+        //auto fan_speed =  fan.getSpeed() / 10.0;
 
         printf("[Sensor task] Sent data: co2 read %d\n", ppm);
         printf("[Sensor task] Sent data: RH read %5.1f\n", rh_value);
         printf("[Sensor task] Sent data: T read %5.1f\n", temp_value);
-        printf("[Sensor task] data: Fan speed  %5.1f\n", fan_speed);
-        fan.setSpeed(50);
-        printf("[Sensor task] New Fan speed  %d\n", fan.getSpeed());
+       // printf("[Sensor task] data: Fan speed  %5.1f\n", fan_speed);
+        //fan.setSpeed(50);
+        //printf("[Sensor task] New Fan speed  %d\n", fan.getSpeed());
 
         //printf("[Sensor task] Sent data: Fan running: %s ", fanRun? "Yes" : "No");
 
