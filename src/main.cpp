@@ -1,4 +1,74 @@
-#include <iostream>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "co2_sensor/co2.h"
+#include "co2_valve/co2_valve.h"
+#include "tasks/sensorsTask.h"
+#include "tasks/controllersTask.h"
+#include "tasks/oledTask.h"
+
+
+#include "PicoOsUart.h"
+#include "ModbusClient.h"
+#include <stdio.h>
+
+
+#define UART_NR 1
+#define UART_TX_PIN 4
+#define UART_RX_PIN 5
+#define BAUD_RATE 9600
+#define STOP_BITS 2
+
+#define ENCODER_A  10
+#define ENCODER_B  11
+#define BUTTON_PIN 12
+
+#include "hardware/timer.h"
+
+//UiScreen state = UiScreen::Welcome;
+
+extern "C" {
+uint32_t read_runtime_ctr(void) {
+    return timer_hw->timerawl;
+}
+}
+
+int main() {
+    stdio_init_all();
+   // printf("\nBoot - co2 sensor test\n");
+
+    // 1) Create UART and Modbus client (shared by all sensors)
+    auto uart = std::make_shared<PicoOsUart>(UART_NR, UART_TX_PIN, UART_RX_PIN, BAUD_RATE, STOP_BITS);
+    auto rtu_client = std::make_shared<ModbusClient>(uart);
+
+    UiDataQ = xQueueCreate(10,sizeof (int));
+
+    gpio_set_irq_enabled_with_callback(BUTTON_PIN, GPIO_IRQ_EDGE_FALL, true, &Encoder_ISR);
+    gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &Encoder_ISR);
+
+
+    xTaskCreate(SensorsTask, "Sensors", 512, (void*)&rtu_client,
+                1, nullptr);
+    xTaskCreate(ControllersTask, "Controller", 512, nullptr,
+                1, nullptr);
+    xTaskCreate(OledTask, "OLED", 512, nullptr,
+                1, nullptr);
+    xTaskCreate(ChangeStateTask, "Change state", 512, nullptr,
+                1, nullptr);
+
+
+    vTaskStartScheduler();
+
+    while (1) {}
+}
+
+
+
+
+
+
+
+
+/*#include <iostream>
 #include <sstream>
 #include "FreeRTOS.h"
 #include "task.h"
@@ -7,6 +77,23 @@
 #include "PicoOsUart.h"
 #include "ssd1306.h"
 
+#include "co2_sensor/co2.h"
+#include "co2_valve/co2_valve.h"
+#include "tasks/sensorsTask.h"
+#include "tasks/controllersTask.h"
+
+#if 0
+#define UART_NR 0
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
+#else
+#define UART_NR 1
+#define UART_TX_PIN 4
+#define UART_RX_PIN 5
+#endif
+
+#define BAUD_RATE 9600
+#define STOP_BITS 2 // for real system (pico simualtor also requires 2 stop bits)
 
 #include "hardware/timer.h"
 extern "C" {
@@ -119,6 +206,9 @@ int main()
     printf("\nBoot\n");
 
     gpio_sem = xSemaphoreCreateBinary();
+
+
+
     //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr,
@@ -150,18 +240,7 @@ int main()
 
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
-#if 0
-#define UART_NR 0
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
-#else
-#define UART_NR 1
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
-#endif
 
-#define BAUD_RATE 9600
-#define STOP_BITS 2 // for real system (pico simualtor also requires 2 stop bits)
 
 #define USE_MODBUS
 
@@ -183,11 +262,18 @@ void modbus_task(void *param) {
 
     //printf("\nBoot\n");
 
+
+
+
+
 #ifdef USE_MODBUS
     auto uart{std::make_shared<PicoOsUart>(UART_NR, UART_TX_PIN, UART_RX_PIN, BAUD_RATE, STOP_BITS)};
     auto rtu_client{std::make_shared<ModbusClient>(uart)};
     ModbusRegister rh(rtu_client, 241, 256);
     ModbusRegister t(rtu_client, 241, 257);
+    //---------------------------------
+    ModbusRegister co2(rtu_client, 240, 257);
+
     ModbusRegister produal(rtu_client, 1, 0);
     produal.write(100);
     vTaskDelay((100));
@@ -200,6 +286,9 @@ void modbus_task(void *param) {
         printf("RH=%5.1f%%\n", rh.read() / 10.0);
         vTaskDelay(5);
         printf("T =%5.1f%%\n", t.read() / 10.0);
+        //------------
+        printf("co2 =%d ppm\n", co2.read() *10);
+
         vTaskDelay(3000);
 #endif
     }
@@ -256,4 +345,4 @@ void i2c_task(void *param) {
     }
 
 
-}
+}*/

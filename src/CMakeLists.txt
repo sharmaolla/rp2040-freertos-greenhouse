@@ -34,6 +34,25 @@ add_executable(${ProjectName}
 #        display/ssd1306.h
         display/ssd1306os.h
         display/ssd1306os.cpp
+
+        co2_sensor/co2.cpp
+        co2_sensor/co2.h
+        co2_valve/co2_valve.cpp
+        co2_valve/co2_valve.h
+
+        rh_t_sensor/rh_t_sensor.cpp
+        rh_t_sensor/rh_t_sensor.h
+
+        fan/fan.cpp
+        fan/fan.h
+
+
+        tasks/sensorsTask.cpp
+        tasks/sensorsTask.h
+        tasks/controllersTask.cpp
+        tasks/controllersTask.h
+        tasks/oledTask.cpp
+        tasks/oledTask.h
 )
 
 target_include_directories(${ProjectName} PRIVATE
@@ -43,6 +62,9 @@ target_include_directories(${ProjectName} PRIVATE
         i2c
         display
         ipstack
+        co2_sensor
+        co2_valve
+        tasks
 )
 
 target_compile_definitions(${ProjectName} PRIVATE

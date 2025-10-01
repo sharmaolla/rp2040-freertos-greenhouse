@@ -4,6 +4,7 @@
 
 #include "ModbusRegister.h"
 
+
 ModbusRegister::ModbusRegister(std::shared_ptr<ModbusClient> client_, int server_address, int register_address,
                                bool holding_register) :
         client(client_), server(server_address), reg_addr(register_address), hr(holding_register) {
@@ -20,6 +21,24 @@ uint16_t ModbusRegister::read() {
     return value;
 }
 
+
+/*uint16_t ModbusRegister::read() {
+    uint16_t value = 0;
+    // With RTU one client handles all devices (servers) on the same bus
+    // so we need to set the server address
+    client->set_destination_rtu_address(server);
+    if(di){
+        nmbs_bitfield bits;
+        auto err = client->read_discrete_inputs(reg_addr, 1, bits);
+        if (err == 0) {
+            value = nmbs_bitfield_read(bits, 0); // get first bit
+        }
+    }
+    else if(hr) client->read_holding_registers(reg_addr, 1, &value);
+    else client->read_input_registers(reg_addr, 1, &value);
+    return value;
+}
+*/
 void ModbusRegister::write(uint16_t value) {
     // only holding register is writable
     if(hr){

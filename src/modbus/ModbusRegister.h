@@ -8,6 +8,8 @@
 #include <memory>
 #include "ModbusClient.h"
 
+
+
 class ModbusRegister {
 public:
     ModbusRegister(std::shared_ptr<ModbusClient> client_, int server_address, int register_address, bool holding_register = true);
